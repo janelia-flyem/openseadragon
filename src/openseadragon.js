@@ -900,6 +900,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
             zoomPerClick:           2,
             zoomPerScroll:          1.2,
             zoomPerSecond:          1.0,
+            slicePerSecond:         5.0,
             blendTime:              0,
             alwaysBlend:            false,
             autoHideControls:       true,

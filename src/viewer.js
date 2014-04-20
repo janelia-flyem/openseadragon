@@ -205,6 +205,11 @@ $.Viewer = function( options ) {
         // how much we should be continuously zooming by
         "zoomFactor":        null,
         "lastZoomTime":      null,
+        // whether we should be slicing
+        "slicing":           false,
+        // how much we should be moving when slicing
+        "sliceFactor":       null,
+        "lastSliceTime":     null,
         // did we decide this viewer has a sequence of tile sources
         "sequenced":         false,
         "sequence":          0,
@@ -1355,11 +1360,18 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         //////////////////////////////////////////////////////////////////////////
         // Navigation Controls
         //////////////////////////////////////////////////////////////////////////
+        /*
         var beginZoomingInHandler   = $.delegate( this, beginZoomingIn ),
             endZoomingHandler       = $.delegate( this, endZooming ),
             doSingleZoomInHandler   = $.delegate( this, doSingleZoomIn ),
             beginZoomingOutHandler  = $.delegate( this, beginZoomingOut ),
             doSingleZoomOutHandler  = $.delegate( this, doSingleZoomOut ),
+        */
+        var beginSliceIncHandler    = $.delegate( this, beginSliceInc ),
+            endSliceHandler         = $.delegate( this, endSlicing ),
+            doSingleSliceIncHandler = $.delegate( this, doSingleSliceInc ),
+            beginSliceDecHandler    = $.delegate( this, beginSliceDec ),
+            doSingleSliceDecHandler = $.delegate( this, doSingleSliceDec ),
             onHomeHandler           = $.delegate( this, onHome ),
             onFullScreenHandler     = $.delegate( this, onFullScreen ),
             onRotateLeftHandler     = $.delegate( this, onRotateLeft ),
@@ -1391,11 +1403,19 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     srcGroup:   resolveUrl( this.prefixUrl, navImages.zoomIn.GROUP ),
                     srcHover:   resolveUrl( this.prefixUrl, navImages.zoomIn.HOVER ),
                     srcDown:    resolveUrl( this.prefixUrl, navImages.zoomIn.DOWN ),
+                    /*
                     onPress:    beginZoomingInHandler,
                     onRelease:  endZoomingHandler,
                     onClick:    doSingleZoomInHandler,
                     onEnter:    beginZoomingInHandler,
                     onExit:     endZoomingHandler,
+                    */
+                    onPress:    beginSliceIncHandler, //beginZoomingInHandler,
+                    onRelease:  endSliceHandler, //endZoomingHandler,
+                    onClick:    doSingleSliceIncHandler, //doSingleZoomInHandler,
+                    onEnter:    beginSliceIncHandler, //beginZoomingInHandler,
+                    onExit:     endSliceHandler, //endZoomingHandler,
+                    
                     onFocus:    onFocusHandler,
                     onBlur:     onBlurHandler
                 }));
@@ -1409,11 +1429,19 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     srcGroup:   resolveUrl( this.prefixUrl, navImages.zoomOut.GROUP ),
                     srcHover:   resolveUrl( this.prefixUrl, navImages.zoomOut.HOVER ),
                     srcDown:    resolveUrl( this.prefixUrl, navImages.zoomOut.DOWN ),
+                    /*
                     onPress:    beginZoomingOutHandler,
                     onRelease:  endZoomingHandler,
                     onClick:    doSingleZoomOutHandler,
                     onEnter:    beginZoomingOutHandler,
                     onExit:     endZoomingHandler,
+                    */
+                    onPress:    beginSliceDecHandler, //beginZoomingOutHandler,
+                    onRelease:  endSliceHandler, //endZoomingHandler,
+                    onClick:    doSingleSliceDecHandler, //doSingleZoomOutHandler,
+                    onEnter:    beginSliceDecHandler, //beginZoomingOutHandler,
+                    onExit:     endSliceHandler, //endZoomingHandler,
+                    
                     onFocus:    onFocusHandler,
                     onBlur:     onBlurHandler
                 }));
@@ -1906,8 +1934,9 @@ function openTileSource( viewer, source ) {
             showNavigator:          false,
             minZoomImageRatio:      1,
             maxZoomPixelRatio:      1,
+            z:                      _this.source.minZ,
             viewer:                 _this,
-            degrees:                 _this.degrees //,
+            degrees:                _this.degrees //,
             //TODO: figure out how to support these in a way that makes sense
             //minZoomLevel:           this.minZoomLevel,
             //maxZoomLevel:           this.maxZoomLevel
@@ -1929,6 +1958,7 @@ function openTileSource( viewer, source ) {
             defaultZoomLevel:   _this.defaultZoomLevel,
             minZoomLevel:       _this.minZoomLevel,
             maxZoomLevel:       _this.maxZoomLevel,
+            z:                  _this.source.minZ,
             viewer:             _this,
             degrees:            _this.degrees
         });
@@ -2776,6 +2806,72 @@ function doSingleZoomOut() {
             1.0 / this.zoomPerClick
         );
         this.viewport.applyConstraints();
+    }
+}
+
+
+function beginSliceInc() {
+    THIS[ this.hash ].lastSliceTime = $.now();
+    THIS[ this.hash ].sliceFactor = this.slicePerSecond;
+    THIS[ this.hash ].slicing = true;
+    scheduleSlicing( this );
+}
+
+function beginSliceDec() {
+    THIS[ this.hash ].lastSliceTime = $.now();
+    THIS[ this.hash ].sliceFactor = -this.slicePerSecond;
+    THIS[ this.hash ].slicing = true;
+    scheduleSlicing( this );
+}
+
+
+function endSlicing() {
+    THIS[ this.hash ].slicing = false;
+}
+
+
+function scheduleSlicing( viewer ) {
+    $.requestAnimationFrame( $.delegate( viewer, doSlicing ) );
+}
+
+
+function doSlicing() {
+    var currentTime,
+        deltaTime,
+        newSlice,
+        incrSlice;
+
+    if ( THIS[ this.hash ].slicing && this.viewport) {
+        currentTime     = $.now();
+        deltaTime       = currentTime - THIS[ this.hash ].lastSliceTime;
+        incrSlice = Math.round(THIS[ this.hash ].sliceFactor * deltaTime / 1000);
+        newSlice = this.viewport.z + incrSlice;
+        newSlice = Math.max(newSlice, this.source.minZ);
+        newSlice = Math.min(newSlice, this.source.maxZ);
+
+        if ( newSlice !== this.viewport.z ) {
+            this.viewport.z = newSlice;
+            THIS[ this.hash ].forceRedraw = true;
+            THIS[ this.hash ].lastSliceTime = currentTime;
+        }
+
+        scheduleSlicing( this );
+    }
+}
+
+function doSingleSliceInc() {
+    if ( this.viewport ) {
+        THIS[ this.hash ].slicing = false;
+        THIS[ this.hash ].forceRedraw = true;
+        this.viewport.z = Math.min(this.viewport.z + 1, this.source.maxZ);
+    }
+}
+
+function doSingleSliceDec() {
+    if ( this.viewport ) {
+        THIS[ this.hash ].slicing = false;
+        THIS[ this.hash ].forceRedraw = true;
+        this.viewport.z = Math.max(this.viewport.z - 1, this.source.minZ);
     }
 }
 

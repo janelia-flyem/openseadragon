@@ -403,6 +403,13 @@ function updateViewport( drawer ) {
 
     var tile,
         level,
+        z,
+        lowestZ,
+        highestZ,
+        //TODO: Should be tuned depending on speed of tile access and size of viewport.
+        //This value seems to work well on a MacBookPro 2013 with SSD.  It's possible
+        //that the tile caching is being done inefficiently across the Z.
+        ZRadius         = 1,
         best            = null,
         haveDrawn       = false,
         currentTime     = $.now(),
@@ -410,6 +417,7 @@ function updateViewport( drawer ) {
         viewportBounds  = drawer.viewport.getBounds( true ),
         viewportTL      = viewportBounds.getTopLeft(),
         viewportBR      = viewportBounds.getBottomRight(),
+        viewportZ       = drawer.viewport.z,
         zeroRatioC      = drawer.viewport.deltaPixelsFromPoints(
             drawer.source.getPixelRatio( 0 ),
             true
@@ -483,6 +491,10 @@ function updateViewport( drawer ) {
     //TODO
     lowestLevel = Math.min( lowestLevel, highestLevel );
 
+    //Compute the range of z for tile caching.
+    lowestZ  = Math.max( drawer.viewport.z - ZRadius, drawer.source.minZ );
+    highestZ = Math.min( drawer.viewport.z + ZRadius, drawer.source.maxZ );
+
     //TODO
     var drawLevel; // FIXME: drawLevel should have a more explanatory name
     for ( level = highestLevel; level >= lowestLevel; level-- ) {
@@ -527,20 +539,29 @@ function updateViewport( drawer ) {
         levelVisibility = optimalRatio / Math.abs(
             optimalRatio - renderPixelRatioT
         );
+        
+        //TODO FLYEM -- Iterate through (viewportZ - n) -> (viewportZ + n), where n >= 1 and
+        // is checked against viewport.minZ and viewport.maxZ.
 
-        //TODO
-        best = updateLevel(
-            drawer,
-            haveDrawn,
-            drawLevel,
-            level,
-            levelOpacity,
-            levelVisibility,
-            viewportTL,
-            viewportBR,
-            currentTime,
-            best
-        );
+        var drawLevelZ;
+        for ( z = lowestZ; z <= highestZ; z++ ) {
+            drawLevelZ = (z == drawer.viewport.z) && drawLevel;
+            
+            //TODO
+            best = updateLevel(
+                drawer,
+                haveDrawn,
+                drawLevelZ,
+                level,
+                levelOpacity,
+                levelVisibility,
+                viewportTL,
+                viewportBR,
+                z,
+                currentTime,
+                best
+            );
+        }
 
         //TODO
         if (  providesCoverage( drawer.coverage, level ) ) {
@@ -561,7 +582,7 @@ function updateViewport( drawer ) {
 }
 
 
-function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVisibility, viewportTL, viewportBR, currentTime, best ){
+function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVisibility, viewportTL, viewportBR, viewportZ, currentTime, best ){
 
     var x, y,
         tileTL,
@@ -595,6 +616,7 @@ function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVi
             visibility: levelVisibility,
             topleft: viewportTL,
             bottomright: viewportBR,
+            slice: viewportZ,
             currenttime: currentTime,
             best: best
         });
@@ -621,7 +643,7 @@ function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVi
                 drawer,
                 drawLevel,
                 haveDrawn,
-                x, y,
+                x, y, viewportZ,
                 level,
                 levelOpacity,
                 levelVisibility,
@@ -637,10 +659,10 @@ function updateLevel( drawer, haveDrawn, drawLevel, level, levelOpacity, levelVi
     return best;
 }
 
-function updateTile( drawer, drawLevel, haveDrawn, x, y, level, levelOpacity, levelVisibility, viewportCenter, numberOfTiles, currentTime, best){
+function updateTile( drawer, drawLevel, haveDrawn, x, y, z, level, levelOpacity, levelVisibility, viewportCenter, numberOfTiles, currentTime, best){
 
     var tile = getTile(
-            x, y,
+            x, y, z,
             level,
             drawer.source,
             drawer.tilesMatrix,
@@ -715,7 +737,7 @@ function updateTile( drawer, drawLevel, haveDrawn, x, y, level, levelOpacity, le
     return best;
 }
 
-function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
+function getTile( x, y, z, level, tileSource, tilesMatrix, time, numTiles, normHeight ) {
     var xMod,
         yMod,
         bounds,
@@ -729,28 +751,32 @@ function getTile( x, y, level, tileSource, tilesMatrix, time, numTiles, normHeig
     if ( !tilesMatrix[ level ][ x ] ) {
         tilesMatrix[ level ][ x ] = {};
     }
-
     if ( !tilesMatrix[ level ][ x ][ y ] ) {
+        tilesMatrix[ level ][ x ][ y ] = {};
+    }
+
+    if ( !tilesMatrix[ level ][ x ][ y ][ z ] ) {
         xMod    = ( numTiles.x + ( x % numTiles.x ) ) % numTiles.x;
         yMod    = ( numTiles.y + ( y % numTiles.y ) ) % numTiles.y;
         bounds  = tileSource.getTileBounds( level, xMod, yMod );
-        exists  = tileSource.tileExists( level, xMod, yMod );
-        url     = tileSource.getTileUrl( level, xMod, yMod );
+        exists  = tileSource.tileExists( level, xMod, yMod, z );
+        url     = tileSource.getTileUrl( level, xMod, yMod, z );
 
         bounds.x += 1.0 * ( x - xMod ) / numTiles.x;
         bounds.y += normHeight * ( y - yMod ) / numTiles.y;
 
-        tilesMatrix[ level ][ x ][ y ] = new $.Tile(
+        tilesMatrix[ level ][ x ][ y ][ z ] = new $.Tile(
             level,
             x,
             y,
+			z,
             bounds,
             exists,
             url
         );
     }
 
-    tile = tilesMatrix[ level ][ x ][ y ];
+    tile = tilesMatrix[ level ][ x ][ y ][ z ];
     tile.lastTouchTime = time;
 
     return tile;

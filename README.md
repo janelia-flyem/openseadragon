@@ -4,6 +4,48 @@ An open-source, web-based viewer for zoomable images, implemented in pure JavaSc
 
 See it in action and get started using it at http://openseadragon.github.io/.
 
+## Modifications in Janelia FlyEM fork
+
+OpenSeadragon tile handling has been augmented to allow rapid movement through Z as
+well as the standard pan/zoom within an XY plane.  This allows inspection of 3d image
+volumes using [Raveler-like](https://openwiki.janelia.org/wiki/display/flyem/Raveler)
+tile viewing.
+
+An example setup using a hardwired [DVID](https://github.com/janelia-flyem/dvid) server:
+
+	<script>
+	    var viewer = {
+	        nmPerPixel: 10,
+	        tileSource: {
+	            height:    volumeHeight[slice],
+	            width:     volumeWidth[slice],
+	            tileSize:  512,
+	            minLevel:  0,
+	            maxLevel:  3,
+	            minZ:      1490,
+	            maxZ:      8009,
+	            getTileUrl: function xyTileURL(level, x, y, z) {
+	                return "http://localhost:8000/api/node/8d6/graytiles/tile/xy/" + (3-level) + "/" + x + "_" + y + "_" + z;
+	            }
+	        }
+	    };
+	    viewer.xy = OpenSeadragon({
+	        id:                 "viewer",
+	        prefixUrl:          "/js/openseadragon/images/",
+	        navigatorSizeRatio: 0.25,
+	        wrapHorizontal:     false,
+	        maxZoomPixelRatio:  5.0,
+	        showNavigator:      true,
+	        tileSources:        viewer.tileSource
+	    });
+	    viewer.xy.scalebar({
+	        pixelsPerMeter: 1000000000/viewer.nmPerPixel,
+	        fontColor:      "yellow",
+	        color:          "yellow"
+	    });
+	</script>
+
+
 ## Stable Builds
 
 See the [GitHub releases page](https://github.com/openseadragon/openseadragon/releases).

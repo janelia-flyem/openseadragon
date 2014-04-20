@@ -46,7 +46,7 @@
  *      this tile failed to load? )
  * @param {String} url The URL of this tile's image.
  */
-$.Tile = function(level, x, y, bounds, exists, url) {
+$.Tile = function(level, x, y, z, bounds, exists, url) {
     /**
      * The zoom level this tile belongs to.
      * @member {Number} level
@@ -65,6 +65,12 @@ $.Tile = function(level, x, y, bounds, exists, url) {
      * @memberof OpenSeadragon.Tile#
      */
     this.y       = y;
+    /**
+     * The vector component 'z'.
+     * @member {Number} y
+     * @memberof OpenSeadragon.Tile#
+     */
+    this.z       = z;
     /**
      * Where this tile fits, in normalized coordinates
      * @member {OpenSeadragon.Point} bounds

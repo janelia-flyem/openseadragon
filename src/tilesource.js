@@ -61,7 +61,7 @@
  *      single argument is supplied and it is a String, the extending class is
  *      expected to implement 'getImageInfo' and 'configure'.
  * @param {Number} height
- *      Width of the source image at max resolution in pixels.
+ *      Height of the source image at max resolution in pixels.
  * @param {Number} tileSize
  *      The size of the tiles to assumed to make up each pyramid layer in pixels.
  *      Tile size determines the point at which the image pyramid must be
@@ -73,7 +73,7 @@
  * @param {Number} maxLevel
  *      The maximum level to attempt to load.
  */
-$.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLevel ) {
+$.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLevel, minZ, maxZ ) {
     var callback = null,
         args = arguments,
         options,
@@ -88,7 +88,9 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
             tileSize: args[2],
             tileOverlap: args[3],
             minLevel: args[4],
-            maxLevel: args[5]
+            maxLevel: args[5],
+            minZ: args[6],
+            maxZ: args[7]
         };
     }
 
@@ -160,6 +162,8 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
         this.tileOverlap = 0;
         this.minLevel    = 0;
         this.maxLevel    = 0;
+        this.minZ        = 0;
+        this.maxZ        = 0;
         this.ready       = false;
         //configuration via url implies the extending class
         //implements and 'configure'
@@ -183,6 +187,8 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
                     Math.log( 2 )
                 ) : 0
             );
+        this.minZ        = options.minZ ? options.minZ : 0;
+        this.maxZ        = options.maxZ ? options.maxZ : 0;
         if( callback && $.isFunction( callback ) ){
             callback( this );
         }
@@ -459,9 +465,10 @@ $.TileSource.prototype = /** @lends OpenSeadragon.TileSource.prototype */{
      * @param {Number} level
      * @param {Number} x
      * @param {Number} y
+     * @param {Number} z
      * @throws {Error}
      */
-    getTileUrl: function( level, x, y ) {
+    getTileUrl: function( level, x, y, z ) {
         throw new Error( "Method not implemented." );
     },
 
@@ -471,14 +478,16 @@ $.TileSource.prototype = /** @lends OpenSeadragon.TileSource.prototype */{
      * @param {Number} x
      * @param {Number} y
      */
-    tileExists: function( level, x, y ) {
+    tileExists: function( level, x, y, z ) {
         var numTiles = this.getNumTiles( level );
         return  level >= this.minLevel &&
                 level <= this.maxLevel &&
                 x >= 0 &&
                 y >= 0 &&
+				z >= this.minZ &&
                 x < numTiles.x &&
-                y < numTiles.y;
+                y < numTiles.y &&
+				z <= this.maxZ;
     }
 };
 
