@@ -1243,12 +1243,17 @@ function drawDebugInfo( drawer, tile, count, i ){
             drawer.context.fillText(
                 "Zoom: " + drawer.viewport.getZoom(),
                 tile.position.x,
-                tile.position.y - 30
+                tile.position.y - 35
             );
             drawer.context.fillText(
                 "Pan: " + drawer.viewport.getBounds().toString(),
                 tile.position.x,
-                tile.position.y - 20
+                tile.position.y - 25
+            );
+            drawer.context.fillText(
+                "Z: " + drawer.viewport.z,
+                tile.position.x,
+                tile.position.y - 15
             );
         }
         drawer.context.fillText(
