@@ -1022,7 +1022,7 @@ window.OpenSeadragon = window.OpenSeadragon || function( options ){
 
             //DEVELOPER SETTINGS
             debugMode:              false,
-            debugGridColor:         '#437AB2'
+            debugGridColor:         '#F4FA58'
         },
 
 
