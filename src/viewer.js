@@ -2853,6 +2853,10 @@ function doSlicing() {
             this.viewport.z = newSlice;
             THIS[ this.hash ].forceRedraw = true;
             THIS[ this.hash ].lastSliceTime = currentTime;
+            if (this.navigator && this.navigator.drawer.viewport) {
+              this.navigator.drawer.viewport.z = this.viewport.z;
+              THIS[ this.navigator.hash ].forceRedraw = true;
+            }
         }
 
         scheduleSlicing( this );
@@ -2864,6 +2868,10 @@ function doSingleSliceInc() {
         THIS[ this.hash ].slicing = false;
         THIS[ this.hash ].forceRedraw = true;
         this.viewport.z = Math.min(this.viewport.z + 1, this.source.maxZ);
+        if (this.navigator && this.navigator.drawer.viewport) {
+          this.navigator.drawer.viewport.z = this.viewport.z;
+          THIS[ this.navigator.hash ].forceRedraw = true;
+        }
     }
 }
 
@@ -2872,6 +2880,10 @@ function doSingleSliceDec() {
         THIS[ this.hash ].slicing = false;
         THIS[ this.hash ].forceRedraw = true;
         this.viewport.z = Math.max(this.viewport.z - 1, this.source.minZ);
+        if (this.navigator && this.navigator.drawer.viewport) {
+          this.navigator.drawer.viewport.z = this.viewport.z;
+          THIS[ this.navigator.hash ].forceRedraw = true;
+        }
     }
 }
 
