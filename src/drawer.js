@@ -1250,11 +1250,6 @@ function drawDebugInfo( drawer, tile, count, i ){
                 tile.position.x,
                 tile.position.y - 25
             );
-            drawer.context.fillText(
-                "Z: " + drawer.viewport.z,
-                tile.position.x,
-                tile.position.y - 15
-            );
         }
         drawer.context.fillText(
             "Level: " + tile.level,
@@ -1285,6 +1280,11 @@ function drawDebugInfo( drawer, tile, count, i ){
             "Position: " + tile.position.toString(),
             tile.position.x + 10,
             tile.position.y + 70
+        );
+        drawer.context.fillText(
+            "Z: " + drawer.viewport.z,
+            tile.position.x + 10,
+            tile.position.y + 80
         );
         drawer.context.restore();
     }
