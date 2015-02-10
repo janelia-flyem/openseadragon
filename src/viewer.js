@@ -1551,13 +1551,13 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
       $.requestAnimationFrame(function() {
         if ( self.viewport ) {
           THIS[ self.hash ].slicing = false;
-          THIS[ self.hash ].forceRedraw = true;
           self.viewport.z = Math.min(layer, self.source.maxZ);
           self.viewport.z = Math.max(layer, self.source.minZ);
-            if (self.navigator && self.navigator.drawer.viewport) {
-              self.navigator.drawer.viewport.z = self.viewport.z;
-              THIS[ self.navigator.hash ].forceRedraw = true;
-            }
+          if (self.navigator && self.navigator.drawer.viewport) {
+            self.navigator.drawer.viewport.z = self.viewport.z;
+            THIS[ self.navigator.hash ].forceRedraw = true;
+          }
+          THIS[ self.hash ].forceRedraw = true;
         }
       });
     },
