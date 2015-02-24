@@ -1539,24 +1539,20 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
     },
 
     updateLayer: function (layer) {
-      var self = this,
-        currentTime,
-        deltaTime,
-        newSlice,
-        incrSlice;
-
-      currentTime     = $.now();
-      deltaTime       = currentTime - THIS[ this.hash ].lastSliceTime;
+      var self = this;
 
       $.requestAnimationFrame(function() {
         if ( self.viewport ) {
           THIS[ self.hash ].slicing = false;
           self.viewport.z = Math.min(layer, self.source.maxZ);
           self.viewport.z = Math.max(layer, self.source.minZ);
-          if (self.navigator && self.navigator.drawer.viewport) {
+          if (self.navigator && self.navigator.drawer && self.navigator.drawer.viewport) {
             self.navigator.drawer.viewport.z = self.viewport.z;
-            THIS[ self.navigator.hash ].forceRedraw = true;
+          } else {
+            // the navigator window wasn't ready, so try again.
+            self.updateLayer(layer);
           }
+          THIS[ self.navigator.hash ].forceRedraw = true;
           THIS[ self.hash ].forceRedraw = true;
         }
       });
