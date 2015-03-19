@@ -405,35 +405,35 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
             xhr.send();
 
             xhr.onload = function(){
-                var responseArray   = new Float64Array(this.response);
-                var len = responseArray.length;
-                var dimensions = Math.sqrt(len);
+              var responseArray   = new Float64Array(this.response);
+              var len = responseArray.length;
+              var dimensions = Math.sqrt(len);
 
-                var canvas = document.createElement('canvas');
-                canvas.width = dimensions;
-                canvas.height = dimensions;
-                var ctx = canvas.getContext('2d');
+              var canvas = document.createElement('canvas');
+              canvas.width = dimensions;
+              canvas.height = dimensions;
+              var ctx = canvas.getContext('2d');
 
 
-                var imgData = ctx.createImageData(dimensions, dimensions);
-                var data    = imgData.data;
+              var imgData = ctx.createImageData(dimensions, dimensions);
+              var data    = imgData.data;
 
-                for (var i = 0; i < data.length; i++) {
-                  var id = responseArray[i];
-                  if (id) {
-                    var offset = i * 4;
-                    var hashed = hashCode(id.toString());
-                    data[offset] = grabDigit(hashed, 1) * 10 + 30;    // red
-                    data[offset + 1] = grabDigit(hashed, 3) * 10 + 30;     // green
-                    data[offset + 2] = grabDigit(hashed, 5) * 10 + 30;     // blue
-                    data[offset + 3] = 255;     // opacity
-                  }
+              for (var i = 0; i < data.length; i++) {
+                var id = responseArray[i];
+                if (id) {
+                  var offset = i * 4;
+                  var hashed = hashCode(id.toString());
+                  data[offset] = grabDigit(hashed, 1) * 10 + 30;    // red
+                  data[offset + 1] = grabDigit(hashed, 3) * 10 + 30;     // green
+                  data[offset + 2] = grabDigit(hashed, 5) * 10 + 30;     // blue
+                  data[offset + 3] = 255;     // opacity
                 }
+              }
 
-                // draw data onto the canvas
-                ctx.putImageData(imgData, 0, 0);
+              // draw data onto the canvas
+              ctx.putImageData(imgData, 0, 0);
 
-                finishLoadingImage( ctx, complete, true, jobid );
+              finishLoadingImage( ctx, complete, true, jobid );
             };
 
 
