@@ -194,7 +194,6 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
         }
     }
 
-
 };
 
 

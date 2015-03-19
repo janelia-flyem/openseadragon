@@ -46,7 +46,7 @@
  *      this tile failed to load? )
  * @param {String} url The URL of this tile's image.
  */
-$.Tile = function(level, x, y, z, bounds, exists, url) {
+$.Tile = function(level, x, y, z, bounds, exists, url, type) {
     /**
      * The zoom level this tile belongs to.
      * @member {Number} level
@@ -89,6 +89,13 @@ $.Tile = function(level, x, y, z, bounds, exists, url) {
      * @memberof OpenSeadragon.Tile#
      */
     this.url     = url;
+    /**
+     * The type of tile, used later to determine if extra processing is needed
+     * during loading.
+     * @member {String} type
+     * @memberof OpenSeadragon.Tile#
+     */
+    this.type   = type;
     /**
      * Is this tile loaded?
      * @member {Boolean} loaded
@@ -187,7 +194,7 @@ $.Tile.prototype = /** @lends OpenSeadragon.Tile.prototype */{
      * @returns {String}
      */
     toString: function() {
-        return this.level + "/" + this.x + "_" + this.y;
+        return this.level + "/" + this.x + "_" + this.y + "_" + this.z;
     },
 
     /**
@@ -249,7 +256,7 @@ $.Tile.prototype = /** @lends OpenSeadragon.Tile.prototype */{
 
         if ( !this.loaded || !( this.image || TILE_CACHE[ this.url ] ) ){
             $.console.warn(
-                "Attempting to draw tile %s when it's not yet loaded.",
+                "Attempting to draw tile %s to canvas when it's not yet loaded.",
                 this.toString()
             );
             return;
@@ -275,15 +282,19 @@ $.Tile.prototype = /** @lends OpenSeadragon.Tile.prototype */{
         }
 
         if( !TILE_CACHE[ this.url ] ){
+          if ( this.image && this.image.lineTo) {
+            rendered = this.image;
+          } else {
             canvas = document.createElement( 'canvas' );
             canvas.width = this.image.width;
             canvas.height = this.image.height;
             rendered = canvas.getContext('2d');
             rendered.drawImage( this.image, 0, 0 );
-            TILE_CACHE[ this.url ] = rendered;
-            //since we are caching the prerendered image on a canvas
-            //allow the image to not be held in memory
-            this.image = null;
+          }
+          TILE_CACHE[ this.url ] = rendered;
+          //since we are caching the prerendered image on a canvas
+          //allow the image to not be held in memory
+          this.image = null;
         }
 
         rendered = TILE_CACHE[ this.url ];

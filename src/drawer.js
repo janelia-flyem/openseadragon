@@ -49,7 +49,7 @@ var DEVICE_SCREEN       = $.getWindowSize(),
 
 /**
  * @class Drawer
- * @classdesc Handles rendering of tiles for an {@link OpenSeadragon.Viewer}. 
+ * @classdesc Handles rendering of tiles for an {@link OpenSeadragon.Viewer}.
  * A new instance is created for each TileSource opened (see {@link OpenSeadragon.Viewer#drawer}).
  *
  * @memberof OpenSeadragon
@@ -313,7 +313,7 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
      * @return {Boolean} loading - Whether the request was submitted or ignored
      *      based on OpenSeadragon.DEFAULT_SETTINGS.imageLoaderLimit.
      */
-    loadImage: function( src, callback ) {
+    loadImage: function( tile, callback ) {
         var _this = this,
             loading = false,
             image,
@@ -340,7 +340,7 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
                         $.console.error(
                             "%s while executing %s callback: %s",
                             e.name,
-                            src,
+                            tile.url,
                             e.message,
                             e
                         );
@@ -361,10 +361,92 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
             }, this.timeout );
 
             loading   = true;
-            image.src = src;
+            image.src = tile.url;
         }
 
         return loading;
+    },
+
+    loadVirtual: function( tile, callback) {
+        var _this = this,
+            loading = false,
+            image = {},
+            jobid,
+            complete;
+
+        if ( !this.imageLoaderLimit ||
+              this.downloading < this.imageLoaderLimit ) {
+
+            this.downloading++;
+
+            complete = function( imagesrc, resultingImage ){
+                _this.downloading--;
+                if (typeof ( callback ) == "function") {
+                    try {
+                        callback( resultingImage );
+                    } catch ( e ) {
+                        $.console.error(
+                            "%s while executing %s callback: %s",
+                            e.name,
+                            tile.url,
+                            e.message,
+                            e
+                        );
+                    }
+                }
+            };
+
+
+            // fetch data
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', tile.url, true);
+            xhr.responseType = 'arraybuffer';
+
+            xhr.send();
+
+            xhr.onload = function(){
+                var responseArray   = new Float64Array(this.response);
+                var len = responseArray.length;
+                var dimensions = Math.sqrt(len);
+
+                var canvas = document.createElement('canvas');
+                canvas.width = dimensions;
+                canvas.height = dimensions;
+                var ctx = canvas.getContext('2d');
+
+
+                var imgData = ctx.createImageData(dimensions, dimensions);
+                var data    = imgData.data;
+
+                for (var i = 0; i < data.length; i++) {
+                  var id = responseArray[i];
+                  if (id) {
+                    var offset = i * 4;
+                    var hashed = hashCode(id.toString());
+                    data[offset] = grabDigit(hashed, 1) * 10 + 30;    // red
+                    data[offset + 1] = grabDigit(hashed, 3) * 10 + 30;     // green
+                    data[offset + 2] = grabDigit(hashed, 5) * 10 + 30;     // blue
+                    data[offset + 3] = 255;     // opacity
+                  }
+                }
+
+                // draw data onto the canvas
+                ctx.putImageData(imgData, 0, 0);
+
+                finishLoadingImage( ctx, complete, true, jobid );
+            };
+
+
+            jobid = window.setTimeout( function(){
+                finishLoadingImage( image, complete, false, jobid );
+            }, this.timeout );
+
+            loading   = true;
+            image.src = tile.url;
+        }
+
+        return loading;
+
     },
 
     /**
@@ -539,14 +621,14 @@ function updateViewport( drawer ) {
         levelVisibility = optimalRatio / Math.abs(
             optimalRatio - renderPixelRatioT
         );
-        
+
         //TODO FLYEM -- Iterate through (viewportZ - n) -> (viewportZ + n), where n >= 1 and
         // is checked against viewport.minZ and viewport.maxZ.
 
         var drawLevelZ;
         for ( z = lowestZ; z <= highestZ; z++ ) {
             drawLevelZ = (z == drawer.viewport.z) && drawLevel;
-            
+
             //TODO
             best = updateLevel(
                 drawer,
@@ -745,6 +827,8 @@ function getTile( x, y, z, level, tileSource, tilesMatrix, time, numTiles, normH
         url,
         tile;
 
+    var type = tileSource.type || null;
+
     if ( !tilesMatrix[ level ] ) {
         tilesMatrix[ level ] = {};
     }
@@ -769,10 +853,11 @@ function getTile( x, y, z, level, tileSource, tilesMatrix, time, numTiles, normH
             level,
             x,
             y,
-			z,
+            z,
             bounds,
             exists,
-            url
+            url,
+            type
         );
     }
 
@@ -787,14 +872,101 @@ function loadTile( drawer, tile, time ) {
     if( drawer.viewport.collectionMode ){
         drawer.midUpdate = false;
         onTileLoad( drawer, tile, time );
+    } else if ( drawer.source.virtualMode ) {
+      tile.loading = drawer.loadVirtual(
+        tile,
+        function( image ) {
+          onVirtualLoad( drawer, tile, time, image);
+        }
+      );
     } else {
         tile.loading = drawer.loadImage(
-            tile.url,
+            tile,
             function( image ){
                 onTileLoad( drawer, tile, time, image );
             }
         );
     }
+}
+
+function onVirtualLoad( drawer, tile, time, image) {
+  var insertionIndex,
+      cutoff,
+      worstTile,
+      worstTime,
+      worstLevel,
+      worstTileIndex,
+      prevTile,
+      prevTime,
+      prevLevel,
+      i;
+
+  tile.loading = false;
+
+  if ( drawer.midUpdate ) {
+      $.console.warn( "Tile load callback in middle of drawing routine." );
+      return;
+  } else if ( !image  && !drawer.viewport.collectionMode ) {
+      $.console.log( "Tile %s failed to load: %s", tile.toString(), tile.url );
+      if( !drawer.debugMode ){
+          tile.exists = false;
+          return;
+      }
+  } else if ( time < drawer.lastResetTime ) {
+      $.console.log( "Ignoring tile %s loaded before reset: %s", tile.toString(), tile.url );
+      return;
+  }
+
+  tile.loaded = true;
+  tile.image = image;
+
+  if ( drawer.viewer ) {
+    drawer.viewer.raiseEvent( 'tile-ready', {
+      drawer: drawer,
+      tile: tile
+    });
+  }
+
+  insertionIndex = drawer.tilesLoaded.length;
+
+  if ( drawer.tilesLoaded.length >= drawer.maxImageCacheCount ) {
+      cutoff = Math.ceil( Math.log( drawer.source.tileSize ) / Math.log( 2 ) );
+
+      worstTile       = null;
+      worstTileIndex  = -1;
+
+      for ( i = drawer.tilesLoaded.length - 1; i >= 0; i-- ) {
+          prevTile = drawer.tilesLoaded[ i ];
+
+          if ( prevTile.level <= drawer.cutoff || prevTile.beingDrawn ) {
+              continue;
+          } else if ( !worstTile ) {
+              worstTile       = prevTile;
+              worstTileIndex  = i;
+              continue;
+          }
+
+          prevTime    = prevTile.lastTouchTime;
+          worstTime   = worstTile.lastTouchTime;
+          prevLevel   = prevTile.level;
+          worstLevel  = worstTile.level;
+
+          if ( prevTime < worstTime ||
+              ( prevTime == worstTime && prevLevel > worstLevel ) ) {
+              worstTile       = prevTile;
+              worstTileIndex  = i;
+          }
+      }
+
+      if ( worstTile && worstTileIndex >= 0 ) {
+          worstTile.unload();
+          insertionIndex = worstTileIndex;
+      }
+  }
+
+  drawer.tilesLoaded[ insertionIndex ] = tile;
+  drawer.updateAgain = true;
+
 }
 
 function onTileLoad( drawer, tile, time, image ) {
@@ -815,19 +987,25 @@ function onTileLoad( drawer, tile, time, image ) {
         $.console.warn( "Tile load callback in middle of drawing routine." );
         return;
     } else if ( !image  && !drawer.viewport.collectionMode ) {
-        $.console.log( "Tile %s failed to load: %s", tile, tile.url );
+        $.console.log( "Tile %s failed to load: %s", tile.toString(), tile.url );
         if( !drawer.debugMode ){
             tile.exists = false;
             return;
         }
     } else if ( time < drawer.lastResetTime ) {
-        $.console.log( "Ignoring tile %s loaded before reset: %s", tile, tile.url );
+        $.console.log( "Ignoring tile %s loaded before reset: %s", tile.toString(), tile.url );
         return;
     }
 
     tile.loaded = true;
     tile.image  = image;
 
+    if ( drawer.viewer ) {
+      drawer.viewer.raiseEvent( 'tile-ready', {
+        drawer: drawer,
+        tile: tile
+      });
+    }
 
     insertionIndex = drawer.tilesLoaded.length;
 
@@ -1288,6 +1466,21 @@ function drawDebugInfo( drawer, tile, count, i ){
         );
         drawer.context.restore();
     }
+}
+
+function grabDigit(number, position) {
+  return Math.floor(number / (Math.pow(10, position)) % 10);
+}
+
+function hashCode(string) {
+  var hash = 0, i, chr, len;
+  if (string.length === 0) {return hash;}
+  for (i = 0, len = string.length; i < len; i++) {
+    chr   = string.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
 }
 
 
