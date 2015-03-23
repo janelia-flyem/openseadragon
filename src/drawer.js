@@ -491,7 +491,7 @@ function updateViewport( drawer ) {
         //TODO: Should be tuned depending on speed of tile access and size of viewport.
         //This value seems to work well on a MacBookPro 2013 with SSD.  It's possible
         //that the tile caching is being done inefficiently across the Z.
-        ZRadius         = 2,
+        ZRadius         = 1,
         best            = null,
         haveDrawn       = false,
         currentTime     = $.now(),
@@ -625,10 +625,32 @@ function updateViewport( drawer ) {
         //TODO FLYEM -- Iterate through (viewportZ - n) -> (viewportZ + n), where n >= 1 and
         // is checked against viewport.minZ and viewport.maxZ.
 
-        var drawLevelZ;
-        for ( z = lowestZ; z <= highestZ; z++ ) {
-            drawLevelZ = (z == drawer.viewport.z) && drawLevel;
+        // get the current level first, so that it is returned from the server before the non
+        // visible layers. Should improve perceived performance.
+        var drawLevelZ = true;
+        best = updateLevel(
+            drawer,
+            haveDrawn,
+            drawLevelZ,
+            level,
+            levelOpacity,
+            levelVisibility,
+            viewportTL,
+            viewportBR,
+            drawer.viewport.z,
+            currentTime,
+            best
+        );
 
+        // this is telling the code later on that we don't want to draw this tile yet,
+        // since it will not be visible to the user.
+        drawLevelZ = false;
+
+
+        for ( z = lowestZ; z <= highestZ; z++ ) {
+            if (z === drawer.viewport.z) {
+              continue;
+            }
             //TODO
             best = updateLevel(
                 drawer,
@@ -660,7 +682,6 @@ function updateViewport( drawer ) {
         // because we haven't finished drawing, so
         drawer.updateAgain = true;
     }
-
 }
 
 
