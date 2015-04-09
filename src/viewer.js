@@ -1546,13 +1546,15 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
           THIS[ self.hash ].slicing = false;
           self.viewport.z = Math.min(layer, self.source.maxZ);
           self.viewport.z = Math.max(layer, self.source.minZ);
-          if (self.navigator && self.navigator.drawer && self.navigator.drawer.viewport) {
-            self.navigator.drawer.viewport.z = self.viewport.z;
-          } else {
-            // the navigator window wasn't ready, so try again.
-            self.updateLayer(layer);
+          if (self.navigator) {
+            if (self.navigator.drawer && self.navigator.drawer.viewport) {
+              self.navigator.drawer.viewport.z = self.viewport.z;
+            } else {
+              // the navigator window wasn't ready, so try again.
+              self.updateLayer(layer);
+            }
+            THIS[ self.navigator.hash ].forceRedraw = true;
           }
-          THIS[ self.navigator.hash ].forceRedraw = true;
           THIS[ self.hash ].forceRedraw = true;
         }
       });
