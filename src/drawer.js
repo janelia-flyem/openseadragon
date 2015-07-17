@@ -532,6 +532,12 @@ function updateViewport( drawer ) {
         tile.beingDrawn = false;
     }
 
+    // we dont want to buffer the virtual sources as it causes too much lag
+    // on the client side rendering. 
+    if (drawer.source.virtualMode) {
+      ZRadius = 0;
+    }
+
     //TODO
     drawer.canvas.innerHTML   = "";
     if ( drawer.useCanvas ) {
