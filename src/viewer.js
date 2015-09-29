@@ -385,13 +385,15 @@ $.Viewer = function( options ) {
                             var layerUp = parseInt(document.getElementById('depth').value) + 1;
                             document.getElementById('depth').value = layerUp;
                             document.getElementById('stack-slider').value = layerUp;
-                            _this.updateLayer(layerUp);
+                            _this.React.setState({layer: layerUp});
+                            _this.React.handleLayerChange(layerUp);
                             return false;
                         case 99://c
                             var layerDown = parseInt(document.getElementById('depth').value) - 1;
                             document.getElementById('depth').value = layerDown;
                             document.getElementById('stack-slider').value = layerDown;
-                            _this.updateLayer(layerDown);
+                            _this.React.setState({layer: layerDown});
+                            _this.React.handleLayerChange(layerDown);
                             return false;
                         default:
                             //console.log( 'navigator keycode %s', event.keyCode );
