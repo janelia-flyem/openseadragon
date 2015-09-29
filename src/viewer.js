@@ -382,16 +382,16 @@ $.Viewer = function( options ) {
                             _this.viewport.applyConstraints();
                             return false;
                         case 101://e
-                            var layer = parseInt(document.getElementById('depth').value) + 1;
-                            document.getElementById('depth').value = layer;
-                            document.getElementById('stack-slider').value = layer;
-                            _this.updateLayer(layer);
+                            var layerUp = parseInt(document.getElementById('depth').value) + 1;
+                            document.getElementById('depth').value = layerUp;
+                            document.getElementById('stack-slider').value = layerUp;
+                            _this.updateLayer(layerUp);
                             return false;
                         case 99://c
-                            var layer = parseInt(document.getElementById('depth').value) - 1;
-                            document.getElementById('depth').value = layer;
-                            document.getElementById('stack-slider').value = layer;
-                            _this.updateLayer(layer);
+                            var layerDown = parseInt(document.getElementById('depth').value) - 1;
+                            document.getElementById('depth').value = layerDown;
+                            document.getElementById('stack-slider').value = layerDown;
+                            _this.updateLayer(layerDown);
                             return false;
                         default:
                             //console.log( 'navigator keycode %s', event.keyCode );
