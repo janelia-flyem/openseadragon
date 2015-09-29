@@ -343,6 +343,7 @@ $.Viewer = function( options ) {
                             _this.viewport.applyConstraints();
                             return false;
                         case 45://-|_
+                        case 43:
                             _this.viewport.zoomBy(0.9);
                             _this.viewport.applyConstraints();
                             return false;
@@ -379,6 +380,18 @@ $.Viewer = function( options ) {
                         case 39://right arrow
                             _this.viewport.panBy(new $.Point(0.05, 0));
                             _this.viewport.applyConstraints();
+                            return false;
+                        case 101://e
+                            var layer = parseInt(document.getElementById('depth').value) + 1;
+                            document.getElementById('depth').value = layer;
+                            document.getElementById('stack-slider').value = layer;
+                            _this.updateLayer(layer);
+                            return false;
+                        case 99://c
+                            var layer = parseInt(document.getElementById('depth').value) - 1;
+                            document.getElementById('depth').value = layer;
+                            document.getElementById('stack-slider').value = layer;
+                            _this.updateLayer(layer);
                             return false;
                         default:
                             //console.log( 'navigator keycode %s', event.keyCode );
