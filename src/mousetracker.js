@@ -136,6 +136,8 @@
         this.dragEndHandler     = options.dragEndHandler || null;
         this.pinchHandler       = options.pinchHandler   || null;
         this.stopHandler        = options.stopHandler    || null;
+        this.keyDownHandler     = options.keyDownHandler || null;
+        this.keyUpHandler       = options.keyUpHandler   || null;
         this.keyHandler         = options.keyHandler     || null;
         this.focusHandler       = options.focusHandler   || null;
         this.blurHandler        = options.blurHandler    || null;
@@ -154,6 +156,8 @@
             setCaptureCapable:     !!this.element.setCapture && !!this.element.releaseCapture,
 
             click:                 function ( event ) { onClick( _this, event ); },
+            keydown:               function ( event ) { onKeyDown( _this, event ); },
+            keyup:                 function ( event ) { onKeyUp( _this, event ); },
             keypress:              function ( event ) { onKeyPress( _this, event ); },
             focus:                 function ( event ) { onFocus( _this, event ); },
             blur:                  function ( event ) { onBlur( _this, event ); },
@@ -605,6 +609,8 @@
          *      Arbitrary user-defined object.
          */
         keyHandler: function () { },
+        keyDownHandler: function () { },
+        keyUpHandler: function () { },
 
         /**
          * Implement or assign implementation to these handlers during or after
@@ -746,7 +752,7 @@
     /**
      * Detect browser pointer device event model(s) and build appropriate list of events to subscribe to.
      */
-    $.MouseTracker.subscribeEvents = [ "click", "keypress", "focus", "blur", $.MouseTracker.wheelEventName ];
+    $.MouseTracker.subscribeEvents = [ "click", "keydown", "keyup", "keypress", "focus", "blur", $.MouseTracker.wheelEventName ];
 
     if( $.MouseTracker.wheelEventName == "DOMMouseScroll" ) {
         // Older Firefox
@@ -1163,6 +1169,56 @@
         }
     }
 
+    function onKeyUp( tracker, event ) {
+      //$.console.log( "keyup %s %s %s %s %s", event.keyCode, event.charCode, event.ctrlKey, event.shiftKey, event.altKey );
+      var propagate;
+      if ( tracker.keyUpHandler ) {
+        event = $.getEvent( event );
+        propagate = tracker.keyUpHandler(
+          {
+            eventSource:          tracker,
+            position:             getMouseRelative( event, tracker.element ),
+            keyCode:              event.keyCode ? event.keyCode : event.charCode,
+            ctrl:                 event.ctrlKey,
+            shift:                event.shiftKey,
+            alt:                  event.altKey,
+            meta:                 event.metaKey,
+            originalEvent:        event,
+            preventDefaultAction: false,
+            userData:             tracker.userData
+          }
+        );
+        if ( !propagate ) {
+            $.cancelEvent( event );
+        }
+      }
+    }
+
+    function onKeyDown( tracker, event ) {
+      //$.console.log( "keydown %s %s %s %s %s", event.keyCode, event.charCode, event.ctrlKey, event.shiftKey, event.altKey );
+      var propagate;
+      if ( tracker.keyDownHandler ) {
+        event = $.getEvent( event );
+        propagate = tracker.keyDownHandler(
+          {
+            eventSource:          tracker,
+            position:             getMouseRelative( event, tracker.element ),
+            keyCode:              event.keyCode ? event.keyCode : event.charCode,
+            ctrl:                 event.ctrlKey,
+            shift:                event.shiftKey,
+            alt:                  event.altKey,
+            meta:                 event.metaKey,
+            originalEvent:        event,
+            preventDefaultAction: false,
+            userData:             tracker.userData
+          }
+        );
+        if ( !propagate ) {
+            $.cancelEvent( event );
+        }
+      }
+    }
+
 
     /**
      * @private
@@ -1178,7 +1234,10 @@
                     eventSource:          tracker,
                     position:             getMouseRelative( event, tracker.element ),
                     keyCode:              event.keyCode ? event.keyCode : event.charCode,
+                    ctrl:                 event.ctrlKey,
                     shift:                event.shiftKey,
+                    alt:                  event.altKey,
+                    meta:                 event.metaKey,
                     originalEvent:        event,
                     preventDefaultAction: false,
                     userData:             tracker.userData

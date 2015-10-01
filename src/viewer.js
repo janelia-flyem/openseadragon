@@ -335,8 +335,8 @@ $.Viewer = function( options ) {
                 }
             },
 
-            keyHandler:         function( event ){
-                if ( !event.preventDefaultAction ) {
+            keyDownHandler: function(event) {
+                if ( !event.preventDefaultAction && !event.ctrl && !event.alt && !event.meta ) {
                     switch( event.keyCode ){
                         // zoom in
                         case 61://=|+
@@ -412,6 +412,8 @@ $.Viewer = function( options ) {
                             //console.log( 'navigator keycode %s', event.keyCode );
                             return true;
                     }
+                } else {
+                  return true;
                 }
             }
         }).setTracking( true ); // default state
