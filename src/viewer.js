@@ -338,19 +338,25 @@ $.Viewer = function( options ) {
             keyHandler:         function( event ){
                 if ( !event.preventDefaultAction ) {
                     switch( event.keyCode ){
+                        // zoom in
                         case 61://=|+
+                        case 50://2
                             _this.viewport.zoomBy(1.1);
                             _this.viewport.applyConstraints();
                             return false;
+                        // zoom out
                         case 45://-|_
                         case 43:
+                        case 49://1
                             _this.viewport.zoomBy(0.9);
                             _this.viewport.applyConstraints();
                             return false;
+                        // reset the zoom and pan on the image to the home state
                         case 48://0|)
                             _this.viewport.goHome();
                             _this.viewport.applyConstraints();
                             return false;
+                        // pan up or zoom in if shift held down
                         case 119://w
                         case 87://W
                         case 38://up arrow
@@ -361,6 +367,7 @@ $.Viewer = function( options ) {
                             }
                             _this.viewport.applyConstraints();
                             return false;
+                        // pan down or zoom out if shift held down
                         case 115://s
                         case 83://S
                         case 40://down arrow
@@ -371,25 +378,33 @@ $.Viewer = function( options ) {
                             }
                             _this.viewport.applyConstraints();
                             return false;
+                        // pan to the left
                         case 97://a
                         case 37://left arrow
                             _this.viewport.panBy(new $.Point(-0.05, 0));
                             _this.viewport.applyConstraints();
                             return false;
+                        // pan to the right
                         case 100://d
                         case 39://right arrow
                             _this.viewport.panBy(new $.Point(0.05, 0));
                             _this.viewport.applyConstraints();
                             return false;
+                        // move up a plane
                         case 101://e
-                            var layerUp = parseInt(document.getElementById('depth').value) + 1;
+                        case 69://E
+                            var increment = ( event.shift ) ? 10 : 1;
+                            var layerUp = parseInt(document.getElementById('depth').value) + increment;
                             document.getElementById('depth').value = layerUp;
                             document.getElementById('stack-slider').value = layerUp;
                             _this.React.setState({layer: layerUp});
                             _this.React.handleLayerChange(layerUp);
                             return false;
-                        case 99://c
-                            var layerDown = parseInt(document.getElementById('depth').value) - 1;
+                        // move down a plane
+                        case 113://q
+                        case 81://Q
+                            var decrement = ( event.shift ) ? 10 : 1;
+                            var layerDown = parseInt(document.getElementById('depth').value) - decrement;
                             document.getElementById('depth').value = layerDown;
                             document.getElementById('stack-slider').value = layerDown;
                             _this.React.setState({layer: layerDown});
