@@ -360,34 +360,32 @@ $.Viewer = function( options ) {
                         case 119://w
                         case 87://W
                         case 38://up arrow
-                            if ( event.shift ) {
-                                _this.viewport.zoomBy(1.1);
-                            } else {
-                                _this.viewport.panBy(new $.Point(0, -0.05));
-                            }
+                            var up_delta = ( event.shift ) ? -0.05 : -0.01;
+                            _this.viewport.panBy(new $.Point(0, up_delta));
                             _this.viewport.applyConstraints();
                             return false;
                         // pan down or zoom out if shift held down
                         case 115://s
                         case 83://S
                         case 40://down arrow
-                            if ( event.shift ) {
-                                _this.viewport.zoomBy(0.9);
-                            } else {
-                                _this.viewport.panBy(new $.Point(0, 0.05));
-                            }
+                            var down_delta = ( event.shift ) ? 0.05 : 0.01;
+                            _this.viewport.panBy(new $.Point(0, down_delta));
                             _this.viewport.applyConstraints();
                             return false;
                         // pan to the left
                         case 97://a
+                        case 65://A
                         case 37://left arrow
-                            _this.viewport.panBy(new $.Point(-0.05, 0));
+                            var left_delta = ( event.shift ) ? -0.05 : -0.01;
+                            _this.viewport.panBy(new $.Point(left_delta, 0));
                             _this.viewport.applyConstraints();
                             return false;
                         // pan to the right
                         case 100://d
+                        case 68://D
                         case 39://right arrow
-                            _this.viewport.panBy(new $.Point(0.05, 0));
+                            var right_delta = ( event.shift ) ? 0.05 : 0.01;
+                            _this.viewport.panBy(new $.Point(right_delta, 0));
                             _this.viewport.applyConstraints();
                             return false;
                         // move up a plane
