@@ -2393,6 +2393,7 @@
                                     position:             getPointRelativeToAbsolute( updateGPoint.currentPos, tracker.element ),
                                     quick:                quick,
                                     shift:                event.shiftKey,
+                                    alt:                  event.altKey,
                                     isTouchEvent:         updateGPoint.type === 'touch',
                                     originalEvent:        event,
                                     preventDefaultAction: false,

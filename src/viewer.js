@@ -2317,7 +2317,7 @@ function onBlur(){
 function onCanvasClick( event ) {
     var gestureSettings;
 
-    if ( !event.preventDefaultAction && this.viewport && event.quick ) {
+    if ( !event.preventDefaultAction && this.viewport && event.quick && !event.alt ) {
         gestureSettings = this.gestureSettingsByDeviceType( event.pointerType );
         if ( gestureSettings.clickToZoom ) {
             this.viewport.zoomBy(
