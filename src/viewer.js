@@ -395,7 +395,7 @@ $.Viewer = function( options ) {
                             var layerUp = parseInt(document.getElementById('depth').value) + increment;
                             document.getElementById('depth').value = layerUp;
                             document.getElementById('stack-slider').value = layerUp;
-                            _this.React.setState({layer: layerUp});
+                            _this.React.setState({layer: layerUp, targetZ: layerUp});
                             _this.React.handleLayerChange(layerUp);
                             return false;
                         // move down a plane
@@ -405,7 +405,7 @@ $.Viewer = function( options ) {
                             var layerDown = parseInt(document.getElementById('depth').value) - decrement;
                             document.getElementById('depth').value = layerDown;
                             document.getElementById('stack-slider').value = layerDown;
-                            _this.React.setState({layer: layerDown});
+                            _this.React.setState({layer: layerDown, targetZ: layerDown});
                             _this.React.handleLayerChange(layerDown);
                             return false;
                         default:
