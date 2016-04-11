@@ -491,7 +491,7 @@ function updateViewport( drawer ) {
         //TODO: Should be tuned depending on speed of tile access and size of viewport.
         //This value seems to work well on a MacBookPro 2013 with SSD.  It's possible
         //that the tile caching is being done inefficiently across the Z.
-        ZRadius         = 0,
+        ZRadius         = 1,
         best            = null,
         haveDrawn       = false,
         currentTime     = $.now(),
